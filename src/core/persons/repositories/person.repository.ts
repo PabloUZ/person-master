@@ -15,8 +15,10 @@ import {
 	IPersonRepository,
 } from '../interfaces/person.repository.interface';
 import { DuplicateDocumentNumberError } from './duplicate-document-number.error';
+import { InvalidLegalRepresentativeError } from './invalid-legal-representative.error';
 
 const MYSQL_DUPLICATE_ENTRY_CODE = 'ER_DUP_ENTRY';
+const MYSQL_FK_VIOLATION_CODES = ['ER_NO_REFERENCED_ROW_2', 'ER_NO_REFERENCED_ROW'];
 
 @Injectable()
 export class PersonRepository implements IPersonRepository {
@@ -94,7 +96,7 @@ export class PersonRepository implements IPersonRepository {
 		try {
 			return await this.repo.save(person);
 		} catch (error) {
-			throw this.translateDuplicateError(error, data.documentNumber);
+			throw this.translateDatabaseError(error, data);
 		}
 	}
 
@@ -102,7 +104,7 @@ export class PersonRepository implements IPersonRepository {
 		try {
 			await this.repo.update(id, data);
 		} catch (error) {
-			throw this.translateDuplicateError(error, data.documentNumber);
+			throw this.translateDatabaseError(error, data);
 		}
 		return this.findById(id);
 	}
@@ -112,20 +114,32 @@ export class PersonRepository implements IPersonRepository {
 		return this.findById(id);
 	}
 
-	private translateDuplicateError(
+	private translateDatabaseError(
 		error: unknown,
-		documentNumber: string | undefined,
+		data: Partial<IPerson>,
 	): unknown {
-		const isDuplicateEntry =
-			error instanceof QueryFailedError &&
-			(error as QueryFailedError & { code?: string }).code ===
-				MYSQL_DUPLICATE_ENTRY_CODE;
+		if (!(error instanceof QueryFailedError)) {
+			return error;
+		}
 
-		if (isDuplicateEntry && documentNumber) {
+		const code = (error as QueryFailedError & { code?: string }).code;
+
+		if (code === MYSQL_DUPLICATE_ENTRY_CODE && data.documentNumber) {
 			this.logger.warn(
-				`Unique constraint hit on documentNumber=${documentNumber}`,
+				`Unique constraint hit on documentNumber=${data.documentNumber}`,
 			);
-			return new DuplicateDocumentNumberError(documentNumber);
+			return new DuplicateDocumentNumberError(data.documentNumber);
+		}
+
+		if (
+			code &&
+			MYSQL_FK_VIOLATION_CODES.includes(code) &&
+			data.legalRepresentativeId
+		) {
+			this.logger.warn(
+				`Invalid legalRepresentativeId reference: ${data.legalRepresentativeId}`,
+			);
+			return new InvalidLegalRepresentativeError(data.legalRepresentativeId);
 		}
 
 		return error;

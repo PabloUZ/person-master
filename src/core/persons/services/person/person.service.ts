@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	ConflictException,
 	HttpStatus,
 	Injectable,
@@ -14,6 +15,7 @@ import { UpdateNaturalPersonDTO } from '../../dto/update-natural-person.dto';
 import { IPerson } from '../../interfaces/person.interface';
 import { IPaginatedResult } from '../../interfaces/person.repository.interface';
 import { DuplicateDocumentNumberError } from '../../repositories/duplicate-document-number.error';
+import { InvalidLegalRepresentativeError } from '../../repositories/invalid-legal-representative.error';
 import { PersonRepository } from '../../repositories/person.repository';
 
 @Injectable()
@@ -40,7 +42,7 @@ export class PersonService {
 		try {
 			person = await this.personRepository.create(dto);
 		} catch (error) {
-			await this.handleDuplicateDocumentNumberError(error);
+			await this.handlePersistenceError(error);
 			throw error;
 		}
 
@@ -146,7 +148,7 @@ export class PersonService {
 			}
 			return updated;
 		} catch (error) {
-			await this.handleDuplicateDocumentNumberError(error);
+			await this.handlePersistenceError(error);
 			throw error;
 		}
 	}
@@ -166,22 +168,26 @@ export class PersonService {
 		});
 	}
 
-	private async handleDuplicateDocumentNumberError(
-		error: unknown,
-	): Promise<void> {
-		if (!(error instanceof DuplicateDocumentNumberError)) {
+	private async handlePersistenceError(error: unknown): Promise<void> {
+		if (error instanceof DuplicateDocumentNumberError) {
+			this.logger.warn(
+				`Duplicate document number caught at write time: ${error.documentNumber}`,
+			);
+
+			const conflicting = await this.personRepository.findByDocumentNumber(
+				error.documentNumber,
+			);
+			if (conflicting) {
+				this.throwExactDuplicate(conflicting);
+			}
 			return;
 		}
 
-		this.logger.warn(
-			`Duplicate document number caught at write time: ${error.documentNumber}`,
-		);
-
-		const conflicting = await this.personRepository.findByDocumentNumber(
-			error.documentNumber,
-		);
-		if (conflicting) {
-			this.throwExactDuplicate(conflicting);
+		if (error instanceof InvalidLegalRepresentativeError) {
+			this.logger.warn(
+				`Rejected invalid legalRepresentativeId: ${error.legalRepresentativeId}`,
+			);
+			throw new BadRequestException(error.message);
 		}
 	}
 }
