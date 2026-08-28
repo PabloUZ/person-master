@@ -26,6 +26,12 @@ export class PersonRepository implements IPersonRepository {
 		return this.repo.findOne({ where: { id } });
 	}
 
+	async findByDocumentNumber(
+		documentNumber: string,
+	): Promise<IPerson | null> {
+		return this.repo.findOne({ where: { documentNumber } });
+	}
+
 	async findByDocumentTypeAndNumber(
 		documentType: DocumentType,
 		documentNumber: string,

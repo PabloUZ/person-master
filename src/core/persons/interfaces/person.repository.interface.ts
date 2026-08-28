@@ -21,6 +21,7 @@ export interface IPaginatedResult<T> {
 
 export interface IPersonRepository {
 	findById(id: string): Promise<IPerson | null>;
+	findByDocumentNumber(documentNumber: string): Promise<IPerson | null>;
 	findByDocumentTypeAndNumber(
 		documentType: string,
 		documentNumber: string,
