@@ -12,6 +12,7 @@ export const envConfig = registerAs('envConfig', () => {
 		nodeEnv: envs.NODE_ENV,
 		port: envs.PORT,
 		seqUrl: envs.SEQ_URL,
+		version: envs.VERSION,
 		database: {
 			type: envs.DB_TYPE,
 			host: envs.DB_HOST,

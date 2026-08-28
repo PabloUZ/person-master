@@ -72,4 +72,10 @@ export class EnvDto {
 	@IsOptional()
 	@IsString()
 	SEQ_URL?: string;
+
+	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
+	@IsString()
+	VERSION!: string;
 }
