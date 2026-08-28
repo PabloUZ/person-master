@@ -4,6 +4,7 @@ import {
 	IsEnum,
 	IsNotEmpty,
 	IsNumber,
+	IsOptional,
 	IsString,
 } from 'class-validator';
 import { Expose, Transform } from 'class-transformer';
@@ -66,4 +67,9 @@ export class EnvDto {
 	@IsDefined()
 	@IsBooleanString()
 	DB_SYNCHRONIZE!: 'true' | 'false';
+
+	@Expose()
+	@IsOptional()
+	@IsString()
+	SEQ_URL?: string;
 }

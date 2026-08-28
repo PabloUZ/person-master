@@ -2,9 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { SeqLogger } from './core/common/loggers/seq.logger';
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create(AppModule, {
+		logger: process.env.SEQ_URL ? new SeqLogger(process.env.SEQ_URL) : undefined,
+	});
 
 	app.useGlobalPipes(
 		new ValidationPipe({

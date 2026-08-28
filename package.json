@@ -35,6 +35,7 @@
     "pm2": "^7.0.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "seq-logging": "^2.2.0",
     "typeorm": "^1.1.0"
   },
   "devDependencies": {
