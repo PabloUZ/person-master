@@ -2,6 +2,7 @@ import {
 	ConflictException,
 	HttpStatus,
 	Injectable,
+	Logger,
 	NotFoundException,
 } from '@nestjs/common';
 
@@ -17,6 +18,8 @@ import { PersonRepository } from '../../repositories/person.repository';
 
 @Injectable()
 export class PersonService {
+	private readonly logger = new Logger(PersonService.name);
+
 	constructor(private readonly personRepository: PersonRepository) {}
 
 	async create(
@@ -27,15 +30,24 @@ export class PersonService {
 			dto.documentNumber,
 		);
 		if (existing) {
+			this.logger.warn(
+				`Exact duplicate rejected: documentType=${dto.documentType} documentNumber=${dto.documentNumber} existingId=${existing.id}`,
+			);
 			this.throwExactDuplicate(existing);
 		}
 
+		let person: IPerson;
 		try {
-			return await this.personRepository.create(dto);
+			person = await this.personRepository.create(dto);
 		} catch (error) {
 			await this.handleDuplicateDocumentNumberError(error);
 			throw error;
 		}
+
+		this.logger.log(
+			`Person created: id=${person.id} personType=${person.personType}`,
+		);
+		return person;
 	}
 
 	async findAll(query: QueryPersonDTO): Promise<IPaginatedResult<IPerson>> {
@@ -80,7 +92,9 @@ export class PersonService {
 		const existing = await this.findById(id);
 		this.assertPersonTypeUnchanged(existing, dto.personType);
 
-		return this.persistUpdate(id, dto);
+		const person = await this.persistUpdate(id, dto);
+		this.logger.log(`Person replaced: id=${id}`);
+		return person;
 	}
 
 	async update(
@@ -90,7 +104,9 @@ export class PersonService {
 		const existing = await this.findById(id);
 		this.assertPersonTypeUnchanged(existing, dto.personType);
 
-		return this.persistUpdate(id, dto);
+		const person = await this.persistUpdate(id, dto);
+		this.logger.log(`Person updated: id=${id}`);
+		return person;
 	}
 
 	async softDelete(id: string): Promise<IPerson> {
@@ -100,6 +116,8 @@ export class PersonService {
 		if (!deactivated) {
 			throw new NotFoundException(`Person ${id} not found`);
 		}
+
+		this.logger.log(`Person soft-deleted: id=${id}`);
 		return deactivated;
 	}
 
@@ -108,6 +126,9 @@ export class PersonService {
 		requestedType: IPerson['personType'],
 	): void {
 		if (existing.personType !== requestedType) {
+			this.logger.warn(
+				`Rejected personType change: id=${existing.id} from=${existing.personType} to=${requestedType}`,
+			);
 			throw new ConflictException(
 				'personType cannot be changed once a person is created',
 			);
@@ -151,6 +172,10 @@ export class PersonService {
 		if (!(error instanceof DuplicateDocumentNumberError)) {
 			return;
 		}
+
+		this.logger.warn(
+			`Duplicate document number caught at write time: ${error.documentNumber}`,
+		);
 
 		const conflicting = await this.personRepository.findByDocumentNumber(
 			error.documentNumber,

@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { envConfig } from './config/env/envs.type';
 import { validate } from './config/env/validate-envs';
 import { PersonsModule } from './core/persons/persons.module';
+import { CommonModule } from './core/common/common.module';
 
 @Module({
 	imports: [
@@ -31,6 +32,8 @@ import { PersonsModule } from './core/persons/persons.module';
 		}),
 
 		PersonsModule,
+
+		CommonModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 
@@ -20,6 +20,8 @@ const MYSQL_DUPLICATE_ENTRY_CODE = 'ER_DUP_ENTRY';
 
 @Injectable()
 export class PersonRepository implements IPersonRepository {
+	private readonly logger = new Logger(PersonRepository.name);
+
 	constructor(
 		@InjectRepository(Person)
 		private readonly repo: Repository<Person>,
@@ -120,6 +122,9 @@ export class PersonRepository implements IPersonRepository {
 				MYSQL_DUPLICATE_ENTRY_CODE;
 
 		if (isDuplicateEntry && documentNumber) {
+			this.logger.warn(
+				`Unique constraint hit on documentNumber=${documentNumber}`,
+			);
 			return new DuplicateDocumentNumberError(documentNumber);
 		}
 
