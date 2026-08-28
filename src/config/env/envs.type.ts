@@ -18,7 +18,7 @@ export const envConfig = registerAs('envConfig', () => {
 			user: envs.DB_USER,
 			password: envs.DB_PASSWORD,
 			name: envs.DB_NAME,
-			synchronize: envs.DB_SYNCHRONIZE,
+			synchronize: envs.DB_SYNCHRONIZE === 'true',
 		},
 	};
 });

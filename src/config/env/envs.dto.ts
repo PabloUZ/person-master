@@ -1,5 +1,12 @@
-import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
-import { Expose } from 'class-transformer';
+import {
+	IsBooleanString,
+	IsDefined,
+	IsEnum,
+	IsNotEmpty,
+	IsNumber,
+	IsString,
+} from 'class-validator';
+import { Expose, Transform } from 'class-transformer';
 
 export enum Environments {
 	PRODUCTION = 'prod',
@@ -12,34 +19,51 @@ export class EnvDto {
 	NODE_ENV!: Environments;
 
 	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
+	@Transform(({ value }) => Number(value))
 	@IsNumber()
 	PORT!: number;
 
 	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
 	@IsString()
 	DB_TYPE!: string;
 
 	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
 	@IsString()
 	DB_HOST!: string;
 
 	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
+	@Transform(({ value }) => Number(value))
 	@IsNumber()
 	DB_PORT!: number;
 
 	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
 	@IsString()
 	DB_USER!: string;
 
 	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
 	@IsString()
 	DB_PASSWORD!: string;
 
 	@Expose()
+	@IsDefined()
+	@IsNotEmpty()
 	@IsString()
 	DB_NAME!: string;
 
 	@Expose()
-	@IsBoolean()
-	DB_SYNCHRONIZE!: boolean;
+	@IsDefined()
+	@IsBooleanString()
+	DB_SYNCHRONIZE!: 'true' | 'false';
 }
