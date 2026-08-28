@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 
 import { Person } from '../entities/person.entity';
 import {
@@ -14,6 +14,9 @@ import {
 	IPersonListFilters,
 	IPersonRepository,
 } from '../interfaces/person.repository.interface';
+import { DuplicateDocumentNumberError } from './duplicate-document-number.error';
+
+const MYSQL_DUPLICATE_ENTRY_CODE = 'ER_DUP_ENTRY';
 
 @Injectable()
 export class PersonRepository implements IPersonRepository {
@@ -86,16 +89,40 @@ export class PersonRepository implements IPersonRepository {
 
 	async create(data: Partial<IPerson>): Promise<IPerson> {
 		const person = this.repo.create(data);
-		return this.repo.save(person);
+		try {
+			return await this.repo.save(person);
+		} catch (error) {
+			throw this.translateDuplicateError(error, data.documentNumber);
+		}
 	}
 
 	async update(id: string, data: Partial<IPerson>): Promise<IPerson | null> {
-		await this.repo.update(id, data);
+		try {
+			await this.repo.update(id, data);
+		} catch (error) {
+			throw this.translateDuplicateError(error, data.documentNumber);
+		}
 		return this.findById(id);
 	}
 
 	async softDelete(id: string): Promise<IPerson | null> {
 		await this.repo.update(id, { status: PersonStatus.INACTIVE });
 		return this.findById(id);
+	}
+
+	private translateDuplicateError(
+		error: unknown,
+		documentNumber: string | undefined,
+	): unknown {
+		const isDuplicateEntry =
+			error instanceof QueryFailedError &&
+			(error as QueryFailedError & { code?: string }).code ===
+				MYSQL_DUPLICATE_ENTRY_CODE;
+
+		if (isDuplicateEntry && documentNumber) {
+			return new DuplicateDocumentNumberError(documentNumber);
+		}
+
+		return error;
 	}
 }

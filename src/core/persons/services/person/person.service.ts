@@ -1,5 +1,6 @@
 import {
 	ConflictException,
+	HttpStatus,
 	Injectable,
 	NotFoundException,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { UpdateLegalPersonDTO } from '../../dto/update-legal-person.dto';
 import { UpdateNaturalPersonDTO } from '../../dto/update-natural-person.dto';
 import { IPerson } from '../../interfaces/person.interface';
 import { IPaginatedResult } from '../../interfaces/person.repository.interface';
+import { DuplicateDocumentNumberError } from '../../repositories/duplicate-document-number.error';
 import { PersonRepository } from '../../repositories/person.repository';
 
 @Injectable()
@@ -20,7 +22,20 @@ export class PersonService {
 	async create(
 		dto: CreateNaturalPersonDTO | CreateLegalPersonDTO,
 	): Promise<IPerson> {
-		return this.personRepository.create(dto);
+		const existing = await this.personRepository.findByDocumentTypeAndNumber(
+			dto.documentType,
+			dto.documentNumber,
+		);
+		if (existing) {
+			this.throwExactDuplicate(existing);
+		}
+
+		try {
+			return await this.personRepository.create(dto);
+		} catch (error) {
+			await this.handleDuplicateDocumentNumberError(error);
+			throw error;
+		}
 	}
 
 	async findAll(query: QueryPersonDTO): Promise<IPaginatedResult<IPerson>> {
@@ -103,10 +118,45 @@ export class PersonService {
 		id: string,
 		data: Partial<IPerson>,
 	): Promise<IPerson> {
-		const updated = await this.personRepository.update(id, data);
-		if (!updated) {
-			throw new NotFoundException(`Person ${id} not found`);
+		try {
+			const updated = await this.personRepository.update(id, data);
+			if (!updated) {
+				throw new NotFoundException(`Person ${id} not found`);
+			}
+			return updated;
+		} catch (error) {
+			await this.handleDuplicateDocumentNumberError(error);
+			throw error;
 		}
-		return updated;
+	}
+
+	private throwExactDuplicate(existing: IPerson): never {
+		throw new ConflictException({
+			status: HttpStatus.CONFLICT,
+			error: 'EXACT_DUPLICATE',
+			message:
+				'A person with this document type and number is already registered.',
+			existing_person: {
+				id: existing.id,
+				document_number: existing.documentNumber,
+				first_name: existing.firstName,
+				last_name: existing.lastName,
+			},
+		});
+	}
+
+	private async handleDuplicateDocumentNumberError(
+		error: unknown,
+	): Promise<void> {
+		if (!(error instanceof DuplicateDocumentNumberError)) {
+			return;
+		}
+
+		const conflicting = await this.personRepository.findByDocumentNumber(
+			error.documentNumber,
+		);
+		if (conflicting) {
+			this.throwExactDuplicate(conflicting);
+		}
 	}
 }
