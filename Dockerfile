@@ -20,7 +20,9 @@ COPY --from=build /app/package.json .
 RUN npm install -g pm2
 RUN npm install --omit=dev
 
-COPY --from=build /app/dist ./dist
+COPY --from=build --chown=node:node /app/dist ./dist
+
+USER node
 
 EXPOSE 3000
 
