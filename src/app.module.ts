@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { envConfig } from './config/env/envs.type';
 import { validate } from './config/env/validate-envs';
+import { PersonsModule } from './core/persons/persons.module';
 
 @Module({
 	imports: [
@@ -28,6 +29,8 @@ import { validate } from './config/env/validate-envs';
 					synchronize: envs.database.synchronize,
 				}) as TypeOrmModuleOptions,
 		}),
+
+		PersonsModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
