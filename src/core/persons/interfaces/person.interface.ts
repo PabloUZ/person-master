@@ -15,6 +15,11 @@ export enum PersonStatus {
 	INACTIVE = 'INACTIVE',
 }
 
+export enum Gender {
+	MALE = 'MALE',
+	FEMALE = 'FEMALE',
+}
+
 export interface IPerson {
 	id: string;
 	personType: PersonType;
@@ -26,7 +31,7 @@ export interface IPerson {
 	lastName: string | null;
 	secondLastName: string | null;
 	birthDate: string | null;
-	gender: string | null;
+	gender: Gender | null;
 
 	companyName: string | null;
 	tradeName: string | null;
