@@ -10,7 +10,7 @@ import {
 	Put,
 	Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateLegalPersonDTO } from '../../dto/create-legal-person.dto';
@@ -21,8 +21,6 @@ import { UpdateNaturalPersonDTO } from '../../dto/update-natural-person.dto';
 import { LegalPersonDAO } from '../../dao/legal-person.dao';
 import { NaturalPersonDAO } from '../../dao/natural-person.dao';
 import { IPerson, PersonType } from '../../interfaces/person.interface';
-import { PersonTypeValidationPipe } from '../../pipes/person-type-validation/person-type-validation.pipe';
-import { PersonUpdateTypeValidationPipe } from '../../pipes/person-update-type-validation/person-update-type-validation.pipe';
 import { PersonService } from '../../services/person/person.service';
 
 @ApiTags('persons')
@@ -30,12 +28,18 @@ import { PersonService } from '../../services/person/person.service';
 export class PersonController {
 	constructor(private readonly personService: PersonService) {}
 
-	@Post()
-	@ApiOperation({ summary: 'Create a natural or legal person' })
-	async create(
-		@Body(PersonTypeValidationPipe)
-		dto: CreateNaturalPersonDTO | CreateLegalPersonDTO,
-	) {
+	@Post('natural')
+	@ApiOperation({ summary: 'Create a natural person' })
+	@ApiBody({ type: CreateNaturalPersonDTO })
+	async createNatural(@Body() dto: CreateNaturalPersonDTO) {
+		const person = await this.personService.create(dto);
+		return this.toDAO(person);
+	}
+
+	@Post('legal')
+	@ApiOperation({ summary: 'Create a legal person' })
+	@ApiBody({ type: CreateLegalPersonDTO })
+	async createLegal(@Body() dto: CreateLegalPersonDTO) {
 		const person = await this.personService.create(dto);
 		return this.toDAO(person);
 	}
@@ -69,23 +73,45 @@ export class PersonController {
 		return this.toDAO(person);
 	}
 
-	@Put(':id')
-	@ApiOperation({ summary: 'Full update of a person' })
-	async replace(
+	@Put('natural/:id')
+	@ApiOperation({ summary: 'Full update of a natural person' })
+	@ApiBody({ type: CreateNaturalPersonDTO })
+	async replaceNatural(
 		@Param('id', ParseUUIDPipe) id: string,
-		@Body(PersonTypeValidationPipe)
-		dto: CreateNaturalPersonDTO | CreateLegalPersonDTO,
+		@Body() dto: CreateNaturalPersonDTO,
 	) {
 		const person = await this.personService.replace(id, dto);
 		return this.toDAO(person);
 	}
 
-	@Patch(':id')
-	@ApiOperation({ summary: 'Partial update of a person' })
-	async update(
+	@Put('legal/:id')
+	@ApiOperation({ summary: 'Full update of a legal person' })
+	@ApiBody({ type: CreateLegalPersonDTO })
+	async replaceLegal(
 		@Param('id', ParseUUIDPipe) id: string,
-		@Body(PersonUpdateTypeValidationPipe)
-		dto: UpdateNaturalPersonDTO | UpdateLegalPersonDTO,
+		@Body() dto: CreateLegalPersonDTO,
+	) {
+		const person = await this.personService.replace(id, dto);
+		return this.toDAO(person);
+	}
+
+	@Patch('natural/:id')
+	@ApiOperation({ summary: 'Partial update of a natural person' })
+	@ApiBody({ type: UpdateNaturalPersonDTO })
+	async updateNatural(
+		@Param('id', ParseUUIDPipe) id: string,
+		@Body() dto: UpdateNaturalPersonDTO,
+	) {
+		const person = await this.personService.update(id, dto);
+		return this.toDAO(person);
+	}
+
+	@Patch('legal/:id')
+	@ApiOperation({ summary: 'Partial update of a legal person' })
+	@ApiBody({ type: UpdateLegalPersonDTO })
+	async updateLegal(
+		@Param('id', ParseUUIDPipe) id: string,
+		@Body() dto: UpdateLegalPersonDTO,
 	) {
 		const person = await this.personService.update(id, dto);
 		return this.toDAO(person);
