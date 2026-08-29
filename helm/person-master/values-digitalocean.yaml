@@ -1,11 +1,8 @@
 image:
   repository: registry.digitalocean.com/person-master-dfp-2026/person-master
-  tag: initial
-
+  tag: b839f38
 service:
   type: LoadBalancer
-
 mysql:
   storage:
     storageClass: do-block-storage
-
