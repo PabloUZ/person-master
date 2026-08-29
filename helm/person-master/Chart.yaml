@@ -1,0 +1,6 @@
+apiVersion: v2
+name: person-master
+description: Helm chart for the person-master NestJS API and its MySQL dependency.
+type: application
+version: 0.1.0
+appVersion: "0.0.1"

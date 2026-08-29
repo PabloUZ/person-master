@@ -2,10 +2,8 @@ FROM node:22 AS build
 
 WORKDIR /app
 
-RUN npm install -g copyfiles
-
-COPY package.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
 
@@ -15,10 +13,9 @@ FROM node:22-alpine AS production
 
 WORKDIR /app
 
-COPY --from=build /app/package.json .
+COPY package.json package-lock.json ./
 
-RUN npm install -g pm2
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 COPY --from=build --chown=node:node /app/dist ./dist
 

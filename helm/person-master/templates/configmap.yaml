@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "person-master.fullname" . }}-config
+  labels:
+    {{- include "person-master.labels" . | nindent 4 }}
+data:
+  NODE_ENV: {{ .Values.app.env.NODE_ENV | quote }}
+  PORT: {{ .Values.app.env.PORT | quote }}
+  VERSION: {{ .Values.app.env.VERSION | quote }}
+  DB_TYPE: {{ .Values.app.env.DB_TYPE | quote }}
+  DB_HOST: {{ .Values.app.env.DB_HOST | quote }}
+  DB_PORT: {{ .Values.app.env.DB_PORT | quote }}
+  DB_NAME: {{ .Values.app.env.DB_NAME | quote }}
+  # Solo para laboratorio academico. En produccion se recomienda DB_SYNCHRONIZE=false y migraciones.
+  DB_SYNCHRONIZE: {{ .Values.app.env.DB_SYNCHRONIZE | quote }}

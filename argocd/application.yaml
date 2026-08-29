@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: person-master
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/PabloUZ/person-master.git
+    targetRevision: actividad3-argocd
+    path: helm/person-master
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-digitalocean.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: person-master
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,6 +1,12 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
+jest.mock('../../../config/env/envs.type', () => ({
+	envConfig: {
+		KEY: 'envConfig',
+	},
+}));
+
 import { envConfig } from '../../../config/env/envs.type';
 import { HealthService } from '../services/health.service';
 import { HealthController } from './health.controller';
